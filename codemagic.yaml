@@ -1,0 +1,34 @@
+workflows:
+  ios-simulator-and-device:
+    name: iOS Simulator + Device Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+
+      - name: Build for iOS simulator (Appetize.io)
+        script: |
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath build
+          
+          mkdir -p Payload
+          cp -r build/Build/Products/Debug-iphonesimulator/Runner.app Payload/
+          zip -r Runner-simulator.zip Payload
+
+      - name: Build for iOS device (Firebase/TestFlight)
+        script: |
+          flutter build ios --release --no-codesign
+
+    artifacts:
+      - build/ios/iphoneos/*.app
+      - build/ios/iphoneos/*.ipa
+      - Runner-simulator.zip
